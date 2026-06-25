@@ -17,8 +17,10 @@ export default function Home() {
   const [selectedLanguage, setSelectedLanguage] = useState("ja");
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSend = (event) => {
+  const handleSend = async (event) => {
     event.preventDefault();
     const trimmed = inputValue.trim();
     if (!trimmed) return;
@@ -31,15 +33,39 @@ export default function Home() {
 
     setMessages((current) => [...current, userMessage]);
     setInputValue("");
+    setErrorMessage("");
+    setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: trimmed,
+          language: selectedLanguage,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "API request failed.");
+      }
+
       const assistantMessage = {
         id: Date.now() + 1,
         role: "assistant",
-        content: "ありがとうございます。AI が回答を生成中です...",
+        content: result.completion,
       };
+
       setMessages((current) => [...current, assistantMessage]);
-    }, 500);
+    } catch (error) {
+      const message = error?.message || "回答の取得中にエラーが発生しました。";
+      setErrorMessage(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -88,11 +114,14 @@ export default function Home() {
               placeholder="質問を入力してください..."
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
+              disabled={isLoading}
             />
-            <button className="button" type="submit">
-              送信
+            <button className="button" type="submit" disabled={isLoading}>
+              {isLoading ? "送信中..." : "送信"}
             </button>
           </form>
+
+          {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
         </section>
       </div>
     </main>

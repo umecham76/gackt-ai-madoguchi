@@ -1,6 +1,8 @@
+import './globals.css';
+
 export const metadata = {
-  title: "Gackt AI Course",
-  description: "Next.js empty page"
+  title: "チャットボット窓口",
+  description: "Lesson 1-2: チャットボット窓口画面のトップページ"
 };
 
 export default function RootLayout({ children }) {
