@@ -5,12 +5,38 @@ import { useState } from "react";
 export default function AuthPage() {
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    const url = new URL(window.location.href);
-    url.searchParams.set("access_token", token);
-    window.location.href = url.toString();
+    if (!token.trim()) {
+      setError("アクセスキーを入力してください。");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token: token.trim() }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "アクセスキーが無効です。");
+      }
+
+      window.location.href = "/";
+    } catch (err) {
+      setError(err?.message || "アクセスキーの検証に失敗しました。");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -26,9 +52,10 @@ export default function AuthPage() {
               placeholder="アクセスキーを入力"
               value={token}
               onChange={(event) => setToken(event.target.value)}
+              disabled={isLoading}
             />
-            <button className="button" type="submit">
-              送信
+            <button className="button" type="submit" disabled={isLoading}>
+              {isLoading ? "確認中..." : "送信"}
             </button>
           </form>
           {error ? <p className="error-text">{error}</p> : null}
