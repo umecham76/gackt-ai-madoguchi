@@ -50,7 +50,13 @@ export default function Home() {
 
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || "API request failed.");
+        const errorText =
+          typeof result.error === "string"
+            ? result.error
+            : result.error && typeof result.error.message === "string"
+            ? result.error.message
+            : JSON.stringify(result.error);
+        throw new Error(errorText || "API request failed.");
       }
 
       const assistantMessage = {

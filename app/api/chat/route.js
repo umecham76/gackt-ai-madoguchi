@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const MODEL = process.env.ANTHROPIC_API_MODEL || "claude-3.5-sonic";
+const MODEL = process.env.ANTHROPIC_API_MODEL || "claude-3.5";
 const API_URL = "https://api.anthropic.com/v1/chat/completions";
 
 const languageNames = {
@@ -14,11 +14,25 @@ const languageNames = {
   pt: "Português",
 };
 
+function formatError(error) {
+  if (!error) return "Anthropic API request failed.";
+  if (typeof error === "string") return error;
+  if (typeof error.message === "string") return error.message;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
 export async function POST(request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Anthropic API key is not configured." },
+      {
+        error:
+          "Anthropic API key is not configured. Create a .env.local file from .env.local.example and set ANTHROPIC_API_KEY, then restart the Next.js server.",
+      },
       { status: 500 }
     );
   }
@@ -60,7 +74,7 @@ export async function POST(request) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: result.error || "Anthropic API request failed." },
+        { error: formatError(result.error) },
         { status: response.status }
       );
     }
@@ -74,7 +88,7 @@ export async function POST(request) {
     return NextResponse.json({ completion: textResponse });
   } catch (error) {
     return NextResponse.json(
-      { error: "Anthropic API request failed." },
+      { error: formatError(error) },
       { status: 500 }
     );
   }
